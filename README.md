@@ -1,40 +1,76 @@
-# Castle Call
+# 🏰 Castle Call
 
-Watches Walt Disney World Lightning Lane availability once a minute and sends a push alert when a ride someone picked reopens.
+**Get a push alert the moment a Walt Disney World Lightning Lane opens up.**
+
+Lightning Lanes for popular rides sell out early, but spots reappear throughout the day as guests change plans. Castle Call watches every ride for you and pings your phone the minute a return time opens, so you can grab it before anyone else.
+
+**Live site:** [castlecall.onrender.com](https://castlecall.onrender.com)
+
+![Castle Call showing live Lightning Lane status for Magic Kingdom rides](screenshot.jpg)
+
+## What it does
+
+- **Pick your rides** across Magic Kingdom, EPCOT, Hollywood Studios, and Animal Kingdom with simple checkboxes.
+- **Live status** on every ride: open with the next return time, full, or gone for the day, refreshed every minute.
+- **Choose your window** (any time, before noon, 12–5 PM, after 5 PM) so you only hear about slots you can use.
+- **Instant alerts** the moment a checked ride reopens, plus a reminder every 15 minutes while it stays open.
+- **Installs like an app** on your phone's home screen, with no App Store needed.
 
 ## How it works
-1. Every 60 seconds it pulls live data for the four WDW parks from ThemeParks.wiki.
-2. It remembers each ride's Lightning Lane status (AVAILABLE, TEMP_FULL, FINISHED).
-3. When a ride flips to AVAILABLE, it finds everyone who picked that ride and whose time window fits the return time.
-4. It sends each of them a web push the moment the ride opens, then a "still open" reminder every 15 minutes while it stays available. Change the reminder gap with `REMINDER_MIN` (for example `REMINDER_MIN=10`).
-
-## Files
-- `checker.js` — the poller plus a small web server
-- `sw.js` — service worker that shows the notification on the phone
-- `subscribe.js` — browser code the ride-picker page calls to turn on alerts
-- `index.html`, `manifest.json`, icons — the website
-
-## Run it
-Needs Node 18 or newer.
 
 ```
+ThemeParks.wiki live data ──► Checker (every 60s) ──► Detects "full → open" ──► Web push to subscribed phones
+                                     │
+                                     └──► Serves the ride-picker website + live ride list
+```
+
+1. A Node.js server polls live Lightning Lane data for all four parks once a minute.
+2. It remembers each ride's last status and spots the moment one flips to available.
+3. It matches the opening against each user's picks and time window.
+4. It sends a web push notification that links straight into the Disney app to book.
+
+## Built with
+
+- **Node.js + Express** for the checker and web server
+- **Web Push (VAPID)** for notifications, with keys generated automatically on first start
+- **Progressive Web App** (service worker + manifest) for home-screen install and iPhone alerts
+- **ThemeParks.wiki API** for live park data
+- **Render** for always-on hosting, deployed from this repo
+
+## Run it locally
+
+Requires Node 18+.
+
+```bash
 npm install
-npm run dry-run          # logs alerts instead of sending, good for testing during park hours
+npm run dry-run   # logs alerts instead of sending them
+npm start         # full mode with real push notifications
 ```
 
-For real pushes, just run `npm start`. The server creates its own push keys on first start and saves them in `data.json`. (You can also supply `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` env vars.)
+Then open http://localhost:3000.
 
-## API the page uses
-- `GET /api/rides` — live list of Lightning Lane rides (id, name, park, status) for the checkboxes
-- `GET /api/vapid-key` — public key for push
-- `POST /api/subscribe` — `{ subscription, rides: [rideId], window: "any|morning|afternoon|evening" }`
-- `POST /api/unsubscribe` — `{ endpoint }`
+### Settings
 
-## Hosting
-It needs to stay running, so use an always-on host (Railway, Render, Fly.io, or a small VPS). Web push requires HTTPS, which those hosts provide. Attach a persistent volume for `data.json` (set `DATA_FILE` to a path on it) so keys and sign-ups survive redeploys.
+| Variable | What it does | Default |
+|---|---|---|
+| `REMINDER_MIN` | Minutes between "still open" reminders | `15` |
+| `DATA_FILE` | Where sign-ups and push keys are saved | `./data.json` |
+| `DRY_RUN` | `1` to log alerts instead of sending | off |
+
+## API
+
+| Route | Purpose |
+|---|---|
+| `GET /api/rides` | Live list of Lightning Lane rides with status |
+| `GET /api/vapid-key` | Public push key for the browser |
+| `POST /api/subscribe` | Save a phone's ride picks and time window |
+| `POST /api/unsubscribe` | Turn off alerts |
 
 ## Notes
-- First poll after startup only records state, so a restart doesn't blast everyone.
-- Subscribers are stored in `data.json`. Move to a real database (Supabase, SQLite) before launch.
-- Keep polling at 60s or slower and credit ThemeParks.wiki. Verify during park hours how quickly reopenings show up.
-- Not affiliated with or endorsed by The Walt Disney Company.
+
+- Polls once a minute to stay friendly to the free community data source.
+- Castle Call only alerts and links to Disney's app; it never books or logs in for you.
+
+---
+
+Castle Call is an independent project and is not affiliated with or endorsed by The Walt Disney Company. Live data from [ThemeParks.wiki](https://themeparks.wiki).
