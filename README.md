@@ -22,12 +22,7 @@ npm install
 npm run dry-run          # logs alerts instead of sending, good for testing during park hours
 ```
 
-For real pushes:
-```
-npx web-push generate-vapid-keys
-export VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...  VAPID_CONTACT=mailto:you@example.com
-npm start
-```
+For real pushes, just run `npm start`. The server creates its own push keys on first start and saves them in `data.json`. (You can also supply `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` env vars.)
 
 ## API the page uses
 - `GET /api/rides` — live list of Lightning Lane rides (id, name, park, status) for the checkboxes
@@ -36,7 +31,7 @@ npm start
 - `POST /api/unsubscribe` — `{ endpoint }`
 
 ## Hosting
-It needs to stay running, so use an always-on host (Railway, Render, Fly.io, or a small VPS). Web push requires HTTPS, which those hosts provide.
+It needs to stay running, so use an always-on host (Railway, Render, Fly.io, or a small VPS). Web push requires HTTPS, which those hosts provide. Attach a persistent volume for `data.json` (set `DATA_FILE` to a path on it) so keys and sign-ups survive redeploys.
 
 ## Notes
 - First poll after startup only records state, so a restart doesn't blast everyone.

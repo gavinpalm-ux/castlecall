@@ -32,15 +32,19 @@ let parks = [];          // [{ id, name }]
 let seeded = false;      // first poll only records state, never alerts
 
 // ---------- Push setup ----------
+// Uses VAPID keys from env vars if set; otherwise creates a pair once and saves it in data.json
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  data.vapid = { publicKey: process.env.VAPID_PUBLIC_KEY, privateKey: process.env.VAPID_PRIVATE_KEY };
+} else if (!data.vapid) {
+  data.vapid = webpush.generateVAPIDKeys();
+  save();
+  console.log("Created new push keys");
+}
 if (!DRY_RUN) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-    console.error("Missing VAPID keys. Run: npx web-push generate-vapid-keys");
-    process.exit(1);
-  }
   webpush.setVapidDetails(
-    process.env.VAPID_CONTACT || "mailto:you@example.com",
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
+    process.env.VAPID_CONTACT || "mailto:castlecall@example.com",
+    data.vapid.publicKey,
+    data.vapid.privateKey
   );
 }
 
@@ -176,7 +180,7 @@ const PUBLIC_FILES = ["index.html", "sw.js", "subscribe.js", "manifest.json", "i
 app.get("/", (_req, res) => res.sendFile(ROOT + "index.html"));
 for (const f of PUBLIC_FILES) app.get("/" + f, (_req, res) => res.sendFile(ROOT + f));
 
-app.get("/api/vapid-key", (_req, res) => res.json({ key: process.env.VAPID_PUBLIC_KEY || null }));
+app.get("/api/vapid-key", (_req, res) => res.json({ key: data.vapid?.publicKey || null }));
 
 // Live ride list for the checkboxes, so closures and new rides stay accurate
 app.get("/api/rides", (_req, res) => {
