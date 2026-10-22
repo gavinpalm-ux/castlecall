@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Castle Call</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Get a push alert the moment a Walt Disney World Lightning Lane opens up.">
+<meta name="theme-color" content="#172033">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Castle Call">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: single narrow column (phone-first), sticky park tabs, sticky bottom action bar */
+:root{
+  --bg:#EEF1F6; --surface:#FFFFFF; --ink:#172033; --muted:#5B6579; --line:#D7DCE6;
+  --bolt:#F2B705; --bolt-ink:#7A5800; --bolt-soft:#FFF4CC; --sel:#E9EEFB;
+  --open:#0E7A4B; --open-soft:#DDF3E8; --full:#5B6579; --full-soft:#E6E9F0;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1522; --surface:#182133; --ink:#E8ECF4; --muted:#9AA5BA; --line:#2A3550;
+  --bolt:#FFC91F; --bolt-ink:#FFD54F; --bolt-soft:#3A3010; --sel:#1F2B45;
+  --open:#5FD39C; --open-soft:#12342A; --full:#9AA5BA; --full-soft:#232D42; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1522; --surface:#182133; --ink:#E8ECF4; --muted:#9AA5BA; --line:#2A3550;
+  --bolt:#FFC91F; --bolt-ink:#FFD54F; --bolt-soft:#3A3010; --sel:#1F2B45;
+  --open:#5FD39C; --open-soft:#12342A; --full:#9AA5BA; --full-soft:#232D42; color-scheme:dark}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+[hidden]{display:none!important}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 130px}
+header{display:grid;gap:6px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{flex:none}
+h1{font-family:var(--display);font-weight:800;font-size:2rem;letter-spacing:-.02em;margin:0;line-height:1;text-wrap:balance}
+.sub{color:var(--muted);margin:0;max-width:44ch}
+.badge{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--bolt-ink);background:var(--bolt-soft);padding:3px 8px;border-radius:4px;justify-self:start}
+.updated{font:500 .75rem var(--mono);color:var(--muted)}
+
+.hint{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--bolt);border-radius:10px;padding:12px 14px;margin:6px 0 10px;font-size:.92rem}
+.hint b{display:block;margin-bottom:2px}
+
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:6px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+.tab{flex:none;font:600 .9rem var(--body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;display:flex;gap:6px;align-items:center}
+.tab[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tab .n{font:500 .75rem var(--mono);opacity:.75}
+.tab:focus-visible,.btn:focus-visible,.link:focus-visible,.chip:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
+
+section{margin-top:18px}
+.park-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+h2{font-family:var(--display);font-weight:600;font-size:1.2rem;margin:0}
+.link{background:none;border:0;color:var(--bolt-ink);font:600 .85rem var(--body);cursor:pointer;padding:4px 0}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ride{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+.ride:first-child{border-top:0}
+.ride:has(input:checked){background:var(--sel)}
+.ride input{appearance:none;flex:none;width:22px;height:22px;border:2px solid var(--muted);border-radius:6px;display:grid;place-content:center;margin:0;cursor:pointer;background:var(--surface)}
+.ride input:checked{background:var(--bolt);border-color:var(--bolt)}
+.ride input:checked::after{content:"";width:6px;height:11px;border:solid #172033;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ride input:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
+.ride-txt{min-width:0;flex:1;display:grid}
+.ride-name{font-weight:600}
+.pill{flex:none;font:500 .72rem var(--mono);padding:4px 8px;border-radius:999px;white-space:nowrap}
+.pill.open{background:var(--open-soft);color:var(--open)}
+.pill.full{background:var(--full-soft);color:var(--full)}
+.empty{padding:16px;color:var(--muted)}
+
+.when{margin-top:26px}
+.when p{color:var(--muted);margin:4px 0 10px;font-size:.92rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:500 .85rem var(--mono);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--bolt);background:var(--bolt-soft);color:var(--bolt-ink)}
+
+.how{margin-top:26px;color:var(--muted);font-size:.92rem}
+.how ul{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:10px;justify-content:space-between}
+.count{font-size:.92rem;color:var(--muted);min-width:0}
+.count strong{color:var(--ink);font-variant-numeric:tabular-nums}
+.actions{display:flex;gap:8px;flex:none}
+.btn{font:700 1rem var(--body);background:var(--bolt);color:#172033;border:0;border-radius:10px;padding:12px 16px;cursor:pointer}
+.btn.ghost{background:none;color:var(--muted);border:1px solid var(--line);font-weight:600}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:.92rem;width:max-content;max-width:calc(100% - 32px);z-index:20}
+.foot{margin-top:28px;font-size:.78rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.ride,.tab,.chip{transition:background .15s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="var(--ink)"/><path d="M19 5 9 19h7l-2 10 11-15h-7z" fill="var(--bolt)"/></svg>
+      <h1>Castle Call</h1>
+    </div>
+    <p class="sub">Check the rides you want. We'll ping you the moment a Lightning Lane return time opens up.</p>
+    <span class="badge" id="demo" hidden>Demo data · live server not connected</span>
+    <span class="updated" id="updated"></span>
+  </header>
+
+  <div class="hint" id="ios-hint" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex:none;margin-top:2px"><path d="M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="var(--bolt-ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>Add to your Home Screen first</b>On iPhone, alerts only work from the Home Screen. Tap Share, then "Add to Home Screen," and open Castle Call from there.</div>
+  </div>
+
+  <nav class="tabs" id="tabs" aria-label="Filter by park"></nav>
+  <div id="parks"><div class="empty">Loading rides…</div></div>
+
+  <section class="when">
+    <h2>Return time I can use</h2>
+    <p>Only alert me if the open slot fits this window.</p>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="how">
+    <h2 style="color:var(--ink)">How alerts work</h2>
+    <ul>
+      <li>You get a push the minute a checked ride opens up.</li>
+      <li>While it stays open, you get a reminder every 15 minutes with the latest return time.</li>
+      <li>Tap the alert to jump into the Disney app and book it.</li>
+    </ul>
+  </section>
+
+  <p class="foot">Live data from ThemeParks.wiki. Castle Call is an independent project and is not affiliated with or endorsed by The Walt Disney Company.</p>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <div class="count" id="count"></div>
+  <div class="actions">
+    <button class="btn ghost" id="off" hidden>Turn off</button>
+    <button class="btn" id="go">Turn on alerts</button>
+  </div>
+</div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="/subscribe.js"></script>
+<script>
+const PARK_ORDER = ["Magic Kingdom","EPCOT","Hollywood Studios","Animal Kingdom"];
+const WINDOWS = [["any","Any time"],["morning","Before noon"],["afternoon","12–5 PM"],["evening","After 5 PM"]];
+const KEY = "ttl-v2";
+
+// Shown only when the live server isn't reachable
+const DEMO = {
+  "Magic Kingdom":[["TRON Lightcycle / Run","FINISHED"],["Seven Dwarfs Mine Train","TEMP_FULL"],["Tiana's Bayou Adventure","AVAILABLE","15:40"],["Space Mountain","AVAILABLE","13:05"],["Peter Pan's Flight","TEMP_FULL"],["Big Thunder Mountain Railroad","AVAILABLE","12:20"],["Jungle Cruise","AVAILABLE","14:10"],["Haunted Mansion","AVAILABLE","11:45"]],
+  "EPCOT":[["Guardians of the Galaxy: Cosmic Rewind","FINISHED"],["Frozen Ever After","TEMP_FULL"],["Remy's Ratatouille Adventure","AVAILABLE","16:30"],["Test Track","AVAILABLE","13:50"],["Soarin'","AVAILABLE","11:15"]],
+  "Hollywood Studios":[["Star Wars: Rise of the Resistance","TEMP_FULL"],["Slinky Dog Dash","TEMP_FULL"],["Mickey & Minnie's Runaway Railway","AVAILABLE","14:35"],["Millennium Falcon: Smugglers Run","AVAILABLE","12:55"],["The Twilight Zone Tower of Terror","AVAILABLE","17:20"]],
+  "Animal Kingdom":[["Avatar Flight of Passage","TEMP_FULL"],["Na'vi River Journey","AVAILABLE","15:05"],["Kilimanjaro Safaris","AVAILABLE","10:50"],["Expedition Everest","AVAILABLE","11:30"]]
+};
+
+let rides = [];          // [{id,name,park,state,returnStart}]
+let demo = false;
+let state = { sel: [], win: "any", park: "all", on: false };
+try { Object.assign(state, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const shortPark = name =>
+  /magic kingdom/i.test(name) ? "Magic Kingdom" :
+  /epcot/i.test(name) ? "EPCOT" :
+  /hollywood/i.test(name) ? "Hollywood Studios" :
+  /animal kingdom/i.test(name) ? "Animal Kingdom" : name;
+
+const fmt = iso => new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}).format(new Date(iso));
+
+function pill(r) {
+  if (r.state === "AVAILABLE") return `<span class="pill open">${r.returnStart ? "Open · " + fmt(r.returnStart) : "Open"}</span>`;
+  if (r.state === "TEMP_FULL") return `<span class="pill full">Full</span>`;
+  if (r.state === "FINISHED") return `<span class="pill full">Gone today</span>`;
+  return "";
+}
+
+function demoRides() {
+  const day = new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date());
+  return Object.entries(DEMO).flatMap(([park, list]) => list.map(([name, st, t]) => ({
+    id: "demo-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-"), name, park, state: st,
+    returnStart: t ? `${day}T${t}:00-04:00` : null
+  })));
+}
+
+async function loadRides() {
+  try {
+    const res = await fetch("/api/rides", { cache: "no-store" });
+    if (!res.ok) throw new Error();
+    const list = await res.json();
+    if (!Array.isArray(list) || !list.length) throw new Error();
+    rides = list.map(r => ({ ...r, park: shortPark(r.park) }));
+    demo = false;
+  } catch (e) {
+    rides = demoRides();
+    demo = true;
+  }
+  $("demo").hidden = !demo;
+  $("updated").textContent = demo ? "" : "Updated " + new Intl.DateTimeFormat("en-US",{hour:"numeric",minute:"2-digit"}).format(new Date());
+  render();
+}
+
+function render() {
+  const parks = PARK_ORDER.filter(p => rides.some(r => r.park === p))
+    .concat([...new Set(rides.map(r => r.park))].filter(p => !PARK_ORDER.includes(p)));
+  const countIn = p => rides.filter(r => (p === "all" || r.park === p) && state.sel.includes(r.id)).length;
+
+  $("tabs").innerHTML = [["all","All parks"], ...parks.map(p => [p,p])].map(([id, label]) => {
+    const n = countIn(id);
+    return `<button class="tab" data-park="${esc(id)}" aria-pressed="${state.park === id}">${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  }).join("");
+
+  const shown = parks.filter(p => state.park === "all" || state.park === p);
+  $("parks").innerHTML = shown.length ? shown.map(p => {
+    const list = rides.filter(r => r.park === p).sort((a, b) => a.name.localeCompare(b.name));
+    const all = list.every(r => state.sel.includes(r.id));
+    return `<section><div class="park-head"><h2>${esc(p)}</h2><button class="link" data-all="${esc(p)}">${all ? "Clear all" : "Select all"}</button></div>
+      <div class="list">${list.map(r => `<label class="ride" for="r-${esc(r.id)}">
+        <input type="checkbox" id="r-${esc(r.id)}" data-ride="${esc(r.id)}" ${state.sel.includes(r.id) ? "checked" : ""}>
+        <span class="ride-txt"><span class="ride-name">${esc(r.name)}</span></span>${pill(r)}</label>`).join("")}</div></section>`;
+  }).join("") : `<div class="empty">No rides to show right now.</div>`;
+
+  $("chips").innerHTML = WINDOWS.map(([v, l]) => `<button class="chip" data-win="${v}" aria-pressed="${state.win === v}">${l}</button>`).join("");
+
+  const c = state.sel.filter(id => rides.some(r => r.id === id)).length;
+  $("count").innerHTML = state.on && c ? `Alerts on · <strong>${c}</strong> ride${c > 1 ? "s" : ""}` :
+    c ? `<strong>${c}</strong> ride${c > 1 ? "s" : ""} selected` : "Pick at least one ride";
+  $("go").textContent = state.on ? "Update alerts" : "Turn on alerts";
+  $("go").disabled = !c;
+  $("off").hidden = !state.on;
+}
+
+let tt;
+function toast(msg) {
+  const el = $("toast"); el.textContent = msg; el.hidden = false;
+  clearTimeout(tt); tt = setTimeout(() => el.hidden = true, 3200);
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-park],[data-all],[data-win]"); if (!t) return;
+  if (t.dataset.park) state.park = t.dataset.park;
+  else if (t.dataset.all) {
+    const ids = rides.filter(r => r.park === t.dataset.all).map(r => r.id);
+    const all = ids.every(id => state.sel.includes(id));
+    state.sel = all ? state.sel.filter(id => !ids.includes(id)) : [...new Set([...state.sel, ...ids])];
+  } else if (t.dataset.win) state.win = t.dataset.win;
+  save(); render();
+});
+
+document.addEventListener("change", e => {
+  const id = e.target.dataset.ride; if (!id) return;
+  state.sel = e.target.checked ? [...state.sel, id] : state.sel.filter(x => x !== id);
+  save(); render(); document.getElementById("r-" + id)?.focus();
+});
+
+$("go").addEventListener("click", async () => {
+  const ids = state.sel.filter(id => rides.some(r => r.id === id));
+  if (demo) { toast("Demo mode: alerts start working once the live server is running."); return; }
+  $("go").disabled = true;
+  try {
+    const res = await turnOnAlerts(ids, state.win);
+    state.on = true; save();
+    toast(`Alerts on for ${res.watching} ride${res.watching > 1 ? "s" : ""}`);
+  } catch (err) {
+    toast(err.message || "Couldn't turn on alerts. Try again.");
+  }
+  render();
+});
+
+$("off").addEventListener("click", async () => {
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = await reg?.pushManager.getSubscription();
+    if (sub) {
+      await fetch("/api/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+      await sub.unsubscribe();
+    }
+  } catch (e) {}
+  state.on = false; save(); render();
+  toast("Alerts turned off");
+});
+
+// iPhone in Safari (not opened from the Home Screen): show the install tip
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const standalone = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone;
+$("ios-hint").hidden = !(isIOS && !standalone);
+
+render();
+loadRides();
+setInterval(loadRides, 60000);
+</script>
+</body>
+</html>

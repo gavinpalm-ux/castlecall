@@ -1,0 +1,16 @@
+{
+  "name": "castlecall",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node checker.js",
+    "dry-run": "DRY_RUN=1 node checker.js",
+    "keys": "web-push generate-vapid-keys"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "web-push": "^3.6.7"
+  }
+}
